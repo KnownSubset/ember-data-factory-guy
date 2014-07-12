@@ -545,56 +545,53 @@ DS.Store.reopen({
     var self = this;
     Ember.get(modelType, 'relationshipsByName').forEach(function (name, relationship) {
       if (relationship.kind == 'hasMany') {
-        Ember.RSVP.Promise.resolve(model.get(name)).then(function (children){
-          children = children || [];
-          children.forEach(function (child) {
-            var belongsToName = self.findRelationshipName(
-              'belongsTo',
-              child.constructor,
-              model
-            );
-            if (relationship.options && relationship.options.inverse) {
-              belongsToName = relationship.options.inverse;
-            }
-            child.set(belongsToName, model);
-          })
-        });
+        var children = model.get(name) || [];
+        children.forEach(function (child) {
+          var belongsToName = self.findRelationshipName(
+            'belongsTo',
+            child.constructor,
+            model
+          );
+          if (relationship.options && relationship.options.inverse) {
+            belongsToName = relationship.options.inverse;
+          }
+          child.set(belongsToName, model);
+        })
       }
 
       if (relationship.kind == 'belongsTo') {
-        Ember.RSVP.Promise.resolve(model.get(name)).then(function (belongsToRecord){
-          if (belongsToRecord) {
-            var setAssociations = function() {
-              var hasManyName = self.findRelationshipName(
-                'hasMany',
-                belongsToRecord.constructor,
-                model
-              )
-              if (hasManyName) {
-                belongsToRecord.get(hasManyName).addObject(model);
-                return;
-              }
-              var oneToOneName = self.findRelationshipName(
-                'belongsTo',
-                belongsToRecord.constructor,
-                model
-              )
-              // Guard against a situation where a model can belong to itself.
-              // Do not want to set the belongsTo on this case.
-              if (oneToOneName && !(belongsToRecord.constructor == model.constructor)) {
-                belongsToRecord.set(oneToOneName, model);
-              }
+        var belongsToRecord = model.get(name);
+        if (belongsToRecord) {
+          var setAssociations = function() {
+            var hasManyName = self.findRelationshipName(
+              'hasMany',
+              belongsToRecord.constructor,
+              model
+            )
+            if (hasManyName) {
+              belongsToRecord.get(hasManyName).addObject(model);
+              return;
             }
-            if (belongsToRecord.then) {
-              belongsToRecord.then(function(record) {
-                belongsToRecord = record;
-                setAssociations();
-              })
-            } else {
-              setAssociations();
+            var oneToOneName = self.findRelationshipName(
+              'belongsTo',
+              belongsToRecord.constructor,
+              model
+            )
+            // Guard against a situation where a model can belong to itself.
+            // Do not want to set the belongsTo on this case.
+            if (oneToOneName && !(belongsToRecord.constructor == model.constructor)) {
+              belongsToRecord.set(oneToOneName, model);
             }
           }
-        });
+          if (belongsToRecord.then) {
+            belongsToRecord.then(function(record) {
+              belongsToRecord = record;
+              setAssociations();
+            })
+          } else {
+            setAssociations();
+          }
+        }
       }
     })
   },
@@ -688,20 +685,22 @@ DS.FixtureAdapter.reopen({
     var promise = this._super(store, type, record);
 
     promise.then(function () {
-      var relationShips = Ember.get(type, 'relationshipNames');
-      if (relationShips.belongsTo) {
-        relationShips.belongsTo.forEach(function (relationship) {
-          var belongsToRecord = record.get(relationship);
-          if (belongsToRecord) {
-            var hasManyName = store.findRelationshipName(
-              'hasMany',
-              belongsToRecord.constructor,
-              record
-            );
-            belongsToRecord.get(hasManyName).addObject(record);
-          }
-        })
-      }
+      Em.RSVP.Promise.resolve(Ember.get(type, 'relationshipNames')).then(function (relationShips){
+        if (relationShips.belongsTo) {
+          relationShips.belongsTo.forEach(function (relationship) {
+            Em.RSVP.Promise.resolve(record.get(relationship)).then(function(belongsToRecord){
+              if (belongsToRecord) {
+                var hasManyName = store.findRelationshipName(
+                  'hasMany',
+                  belongsToRecord.constructor,
+                  record
+                );
+                belongsToRecord.get(hasManyName).addObject(record);
+              }
+            });
+          })
+        }
+      });
     });
 
     return promise;
