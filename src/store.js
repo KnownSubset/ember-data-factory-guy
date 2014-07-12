@@ -171,53 +171,56 @@ DS.Store.reopen({
     var self = this;
     Ember.get(modelType, 'relationshipsByName').forEach(function (name, relationship) {
       if (relationship.kind == 'hasMany') {
-        var children = model.get(name) || [];
-        children.forEach(function (child) {
-          var belongsToName = self.findRelationshipName(
-            'belongsTo',
-            child.constructor,
-            model
-          );
-          if (relationship.options && relationship.options.inverse) {
-            belongsToName = relationship.options.inverse;
-          }
-          child.set(belongsToName, model);
-        })
+        Ember.RSVP.Promise.resolve(model.get(name)).then(function (children){
+          children = children || [];
+          children.forEach(function (child) {
+            var belongsToName = self.findRelationshipName(
+              'belongsTo',
+              child.constructor,
+              model
+            );
+            if (relationship.options && relationship.options.inverse) {
+              belongsToName = relationship.options.inverse;
+            }
+            child.set(belongsToName, model);
+          })
+        });
       }
 
       if (relationship.kind == 'belongsTo') {
-        var belongsToRecord = model.get(name);
-        if (belongsToRecord) {
-          var setAssociations = function() {
-            var hasManyName = self.findRelationshipName(
-              'hasMany',
-              belongsToRecord.constructor,
-              model
-            )
-            if (hasManyName) {
-              belongsToRecord.get(hasManyName).addObject(model);
-              return;
+        Ember.RSVP.Promise.resolve(model.get(name)).then(function (belongsToRecord){
+          if (belongsToRecord) {
+            var setAssociations = function() {
+              var hasManyName = self.findRelationshipName(
+                'hasMany',
+                belongsToRecord.constructor,
+                model
+              )
+              if (hasManyName) {
+                belongsToRecord.get(hasManyName).addObject(model);
+                return;
+              }
+              var oneToOneName = self.findRelationshipName(
+                'belongsTo',
+                belongsToRecord.constructor,
+                model
+              )
+              // Guard against a situation where a model can belong to itself.
+              // Do not want to set the belongsTo on this case.
+              if (oneToOneName && !(belongsToRecord.constructor == model.constructor)) {
+                belongsToRecord.set(oneToOneName, model);
+              }
             }
-            var oneToOneName = self.findRelationshipName(
-              'belongsTo',
-              belongsToRecord.constructor,
-              model
-            )
-            // Guard against a situation where a model can belong to itself.
-            // Do not want to set the belongsTo on this case.
-            if (oneToOneName && !(belongsToRecord.constructor == model.constructor)) {
-              belongsToRecord.set(oneToOneName, model);
-            }
-          }
-          if (belongsToRecord.then) {
-            belongsToRecord.then(function(record) {
-              belongsToRecord = record;
+            if (belongsToRecord.then) {
+              belongsToRecord.then(function(record) {
+                belongsToRecord = record;
+                setAssociations();
+              })
+            } else {
               setAssociations();
-            })
-          } else {
-            setAssociations();
+            }
           }
-        }
+        });
       }
     })
   },
