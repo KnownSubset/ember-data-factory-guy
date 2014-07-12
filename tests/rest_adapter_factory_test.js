@@ -141,6 +141,18 @@ asyncTest("when async belongsTo parent is assigned, parent adds to hasMany recor
 });
 
 
+asyncTest("when async belongsTo parent is assigned, parent adds to hasMany records", function() {
+  var user1 = store.makeFixture('user');
+  var user2 = store.makeFixture('user');
+  var company = store.makeFixture('company', {users: [user1, user2]});
+
+  equal(company.get('users.length'), 2);
+  deepEqual(company.get('users.firstObject').toJSON(), user1.toJSON());
+  deepEqual(company.get('users.lastObject').toJSON(), user2.toJSON());
+  start();
+});
+
+
 test("when belongTo parent is assigned, parent adds to hasMany record using inverse", function() {
   var project = store.makeFixture('project');
   var project2 = store.makeFixture('project', {parent: project});
@@ -173,13 +185,13 @@ test("when belongTo parent is assigned, parent adds to belongsTo record", functi
 test("belongsTo associations defined as attributes in fixture", function() {
   var project = store.makeFixture('project_with_user');
   equal(project.get('user') instanceof User, true)
-  deepEqual(project.get('user').toJSON(),{name: 'User1', company: null})
+  deepEqual(project.get('user').toJSON(),{name: 'User1', company: null, properties: []})
 
   var project = store.makeFixture('project_with_dude');
-  deepEqual(project.get('user').toJSON(),{name: 'Dude', company: null})
+  deepEqual(project.get('user').toJSON(),{name: 'Dude', company: null, properties: []})
 
   var project = store.makeFixture('project_with_admin');
-  deepEqual(project.get('user').toJSON(),{name: 'Admin', company: null})
+  deepEqual(project.get('user').toJSON(),{name: 'Admin', company: null, properties: []})
 });
 
 

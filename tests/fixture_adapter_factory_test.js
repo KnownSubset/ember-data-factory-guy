@@ -144,3 +144,19 @@ asyncTest("#createRecord adds belongsTo association to records it hasMany of", f
       });
   })
 })
+
+asyncTest("#createRecord adds hasMany association to records it hasMany of", function() {
+  var usersJson = store.makeList('user', 3);
+
+  Em.RSVP.all([store.find('user', usersJson[0].id),store.find('user', usersJson[1].id),store.find('user', usersJson[2].id)]).then(function(users) {
+
+    var companyJson = {name:'shell company', user: users.get('firstObject')};
+
+    store.createRecord('company', companyJson).save()
+      .then( function(company) { return company.get('owners'); })
+      .then( function(users) {
+        equal(users.get('length'), usersJson.length);
+        start();
+      });
+  })
+})
