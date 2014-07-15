@@ -311,24 +311,24 @@ DS.FixtureAdapter.reopen({
     var promise = this._super(store, type, record);
 
     promise.then(function () {
-      var relationShips = Ember.get(type, 'relationshipNames');
-      if (relationShips.belongsTo) {
-        relationShips.belongsTo.forEach(function (relationship) {
-          var belongsToRecord = record.get(relationship);
-          Ember.RSVP.resolve(belongsToRecord).then (function(belongsToRecord){
-            if (belongsToRecord) {
-              var hasManyName = store.findRelationshipName(
-                'hasMany',
-                belongsToRecord.constructor,
-                record
-              );
-              Ember.RSVP.resolve(belongsToRecord.get(hasManyName)).then (function(relationship){
-                relationship.addObject(record);
-              });
-            } 
-	  });
-        })
-      }
+      Em.RSVP.Promise.resolve(Ember.get(type, 'relationshipNames')).then(function (relationShips){
+        if (relationShips.belongsTo) {
+          relationShips.belongsTo.forEach(function (relationship) {
+            Em.RSVP.Promise.resolve(record.get(relationship)).then(function(belongsToRecord){
+              if (belongsToRecord) {
+                var hasManyName = store.findRelationshipName(
+                  'hasMany',
+                  belongsToRecord.constructor,
+                  record
+                );
+                Ember.RSVP.resolve(belongsToRecord.get(hasManyName)).then (function(relationship){
+                  relationship.addObject(record);
+                  });
+              }
+            });
+          });
+        }
+      });
     });
 
     return promise;

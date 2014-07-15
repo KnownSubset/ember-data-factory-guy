@@ -173,13 +173,13 @@ test("when belongTo parent is assigned, parent adds to belongsTo record", functi
 test("belongsTo associations defined as attributes in fixture", function() {
   var project = store.makeFixture('project_with_user');
   equal(project.get('user') instanceof User, true)
-  deepEqual(project.get('user').toJSON(),{name: 'User1', company: null})
+  deepEqual(project.get('user').toJSON(),{name: 'User1', company: null, properties: []})
 
   var project = store.makeFixture('project_with_dude');
-  deepEqual(project.get('user').toJSON(),{name: 'Dude', company: null})
+  deepEqual(project.get('user').toJSON(),{name: 'Dude', company: null, properties: []})
 
   var project = store.makeFixture('project_with_admin');
-  deepEqual(project.get('user').toJSON(),{name: 'Admin', company: null})
+  deepEqual(project.get('user').toJSON(),{name: 'Admin', company: null, properties: []})
 });
 
 

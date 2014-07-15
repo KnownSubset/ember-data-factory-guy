@@ -60,7 +60,8 @@ FactoryGuy.define('user', {
 Company = DS.Model.extend({
   name:    DS.attr('string'),
   profile: DS.belongsTo('profile'),
-  users:   DS.hasMany('user', {async: true})
+  users:   DS.hasMany('user', {async: true, inverse: 'company'}),
+  owners:  DS.hasMany('user', {async: true, inverse: 'properties'})
 });
 
 Hat = DS.Model.extend({
@@ -98,7 +99,8 @@ Project = DS.Model.extend({
 
 User = DS.Model.extend({
   name:     DS.attr('string'),
-  company:  DS.belongsTo('company', {async: true}),
+  company:  DS.belongsTo('company', {async: true, inverse: 'users'}),
+  properties:  DS.hasMany('company', {async: true, inverse: 'owners'}),
   projects: DS.hasMany('project'),
   hats:     DS.hasMany('hat', {polymorphic: true})
 });
