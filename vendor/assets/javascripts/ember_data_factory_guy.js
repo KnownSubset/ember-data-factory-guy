@@ -689,14 +689,18 @@ DS.FixtureAdapter.reopen({
       if (relationShips.belongsTo) {
         relationShips.belongsTo.forEach(function (relationship) {
           var belongsToRecord = record.get(relationship);
-          if (belongsToRecord) {
-            var hasManyName = store.findRelationshipName(
-              'hasMany',
-              belongsToRecord.constructor,
-              record
-            );
-            belongsToRecord.get(hasManyName).addObject(record);
-          }
+          Ember.RSVP.resolve(belongsToRecord).then (function(belongsToRecord){
+            if (belongsToRecord) {
+              var hasManyName = store.findRelationshipName(
+                'hasMany',
+                belongsToRecord.constructor,
+                record
+              );
+              Ember.RSVP.resolve(belongsToRecord.get(hasManyName)).then (function(relationship){
+                relationship.addObject(record);
+              });
+            } 
+	  });
         })
       }
     });
@@ -704,6 +708,7 @@ DS.FixtureAdapter.reopen({
     return promise;
   }
 })
+
 FactoryGuyTestMixin = Em.Mixin.create({
 
   // Pass in the app root, which typically is App.
